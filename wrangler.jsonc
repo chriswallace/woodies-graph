@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "woodies-graph",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-08-01",
+  "vars": {
+    // Woodies Generative Characters (ERC-721, Ethereum mainnet)
+    "CONTRACT_ADDRESS": "0x134460d32fc66a6d84487c20dcd9fdcf92316017",
+    // Any Ethereum mainnet JSON-RPC endpoint. The default public endpoint is
+    // fine for light traffic; for reliability set this to a free Alchemy or
+    // Infura URL:  npx wrangler secret put RPC_URL
+    "RPC_URL": "https://cloudflare-eth.com"
+  }
+}
