@@ -76,11 +76,15 @@ const schema = createSchema<Env & ExecutionContext>({
     Query: {
       isHolder: async (_parent, args: { address: string }, ctx) => {
         const address = requireAddress(args.address)
-        return (await cachedBalance(ctx, address)) > 0
+        const holds = (await cachedBalance(ctx, address)) > 0
+        console.log(`isHolder ${address} -> ${holds}`)
+        return holds
       },
       holder: async (_parent, args: { address: string }, ctx): Promise<HolderParent> => {
         const address = requireAddress(args.address)
-        return { address, balance: await cachedBalance(ctx, address) }
+        const balance = await cachedBalance(ctx, address)
+        console.log(`holder ${address} -> balance ${balance}`)
+        return { address, balance }
       },
       holders: async (
         _parent,
@@ -101,6 +105,7 @@ const schema = createSchema<Env & ExecutionContext>({
         const results = await Promise.all(
           unique.map(async (address) => ({ address, balance: await cachedBalance(ctx, address) }))
         )
+        console.log(`holders ${unique.join(',')} -> ${results.map((r) => r.balance).join(',')}`)
         return results.filter((holder) => holder.balance > 0)
       },
       totalSupply: (_parent, _args, ctx) => totalSupply(ctx.RPC_URL, ctx.CONTRACT_ADDRESS),

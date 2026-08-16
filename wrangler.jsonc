@@ -3,6 +3,11 @@
   "name": "woodies-graph",
   "main": "src/index.ts",
   "compatibility_date": "2025-08-01",
+  // Persists console.log output to the dashboard (Workers & Pages ->
+  // woodies-graph -> Logs), so holder checks are visible after the fact.
+  "observability": {
+    "enabled": true
+  },
   // Serves the Worker at the collection's original hostname. Requires the
   // woodiesofficial.com zone to live in the same Cloudflare account you
   // `wrangler login` with. Deploying replaces the DNS record currently on
