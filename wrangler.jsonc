@@ -3,6 +3,13 @@
   "name": "woodies-graph",
   "main": "src/index.ts",
   "compatibility_date": "2025-08-01",
+  // Serves the Worker at the collection's original hostname. Requires the
+  // woodiesofficial.com zone to live in the same Cloudflare account you
+  // `wrangler login` with. Deploying replaces the DNS record currently on
+  // this subdomain (which points at the dead Heroku app).
+  "routes": [
+    { "pattern": "dcl.woodiesofficial.com", "custom_domain": true }
+  ],
   "vars": {
     // Woodies Generative Characters (ERC-721, Ethereum mainnet)
     "CONTRACT_ADDRESS": "0x134460d32fc66a6d84487c20dcd9fdcf92316017",

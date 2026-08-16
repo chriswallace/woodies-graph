@@ -5,7 +5,7 @@ GraphQL endpoint for verifying [Woodies](https://opensea.io/collection/woodies-g
 This replaces the old Hasura instance at `woodies-data-production.herokuapp.com/v1/graphql`, which died when Heroku shut down its free tier. The old stack (Hasura + Postgres + an indexer keeping a holders table in sync) is replaced by a single **Cloudflare Worker with no database**: holder checks are answered by calling `balanceOf()` on the Woodies contract directly over Ethereum JSON-RPC, so the data can never go stale and there is nothing to keep in sync.
 
 - **Contract:** [`0x134460d32fc66a6d84487c20dcd9fdcf92316017`](https://etherscan.io/address/0x134460d32fc66a6d84487c20dcd9fdcf92316017) (Woodies Generative Characters, ERC-721, Ethereum mainnet)
-- **Endpoint path:** `/v1/graphql` (same path shape as the old Hasura URL)
+- **Endpoint:** `https://dcl.woodiesofficial.com/v1/graphql` (the collection's original subdomain, same `/v1/graphql` path as the old Hasura URL)
 - **Hosting:** Cloudflare Workers free tier — 100k requests/day, no cold-start sleeping like Heroku free dynos had
 - **CORS:** open (`*`), so Decentraland scenes can call it directly
 
@@ -17,16 +17,21 @@ npx wrangler login      # one-time, opens browser to your Cloudflare account
 npm run deploy
 ```
 
-That prints your endpoint, e.g. `https://woodies-graph.<your-subdomain>.workers.dev`. The GraphQL API (with a GraphiQL playground in the browser) lives at:
+The deploy attaches the Worker to `dcl.woodiesofficial.com` (configured in `wrangler.jsonc` as a custom domain — Cloudflare handles the DNS record and TLS cert automatically). Two requirements:
+
+1. The `woodiesofficial.com` zone must be in the same Cloudflare account you log in with.
+2. The subdomain currently has a DNS record pointing at the dead Heroku app; wrangler will ask to replace it during deploy — say yes.
+
+The GraphQL API (with a GraphiQL playground in the browser) lives at:
 
 ```
-https://woodies-graph.<your-subdomain>.workers.dev/v1/graphql
+https://dcl.woodiesofficial.com/v1/graphql
 ```
 
 Verify it works:
 
 ```bash
-npm run smoke -- https://woodies-graph.<your-subdomain>.workers.dev/v1/graphql 0xSomeHolderWallet
+npm run smoke -- https://dcl.woodiesofficial.com/v1/graphql 0xSomeHolderWallet
 ```
 
 ### Optional: dedicated RPC
@@ -81,7 +86,7 @@ There's no "list every holder" query: that would require an indexer (the thing t
 ```ts
 import { getPlayer } from '@dcl/sdk/src/players'
 
-const ENDPOINT = 'https://woodies-graph.<your-subdomain>.workers.dev/v1/graphql'
+const ENDPOINT = 'https://dcl.woodiesofficial.com/v1/graphql'
 
 export async function playerHoldsWoodie(): Promise<boolean> {
   const player = getPlayer()
