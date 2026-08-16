@@ -11,6 +11,7 @@ if (!endpoint) {
 
 const query = /* GraphQL */ `
   query Smoke($address: String!) {
+    version
     contractAddress
     totalSupply
     isHolder(address: $address)

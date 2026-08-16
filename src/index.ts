@@ -7,18 +7,25 @@ interface Env {
   CONTRACT_ADDRESS: string
 }
 
-// Balances only change on transfer, so a short in-memory cache keeps repeat
-// checks (e.g. a scene polling) from hammering the RPC endpoint.
-const CACHE_TTL_MS = 60_000
-const balanceCache = new Map<string, { balance: number; expires: number }>()
+// Bump when debugging deploys — `{ version }` on the live endpoint shows
+// which build is actually running.
+const VERSION = '1.1.0'
 
-async function cachedBalance(env: Env, address: string): Promise<number> {
+// Balances only change on transfer, so a short in-memory cache keeps repeat
+// checks (e.g. a scene polling) from hammering the RPC endpoint. The promise
+// itself is cached so concurrent fields in one query (isHolder + holder)
+// share a single RPC call instead of racing.
+const CACHE_TTL_MS = 60_000
+const balanceCache = new Map<string, { promise: Promise<number>; expires: number }>()
+
+function cachedBalance(env: Env, address: string): Promise<number> {
   const key = address.toLowerCase()
   const hit = balanceCache.get(key)
-  if (hit && hit.expires > Date.now()) return hit.balance
-  const balance = await balanceOf(env.RPC_URL, env.CONTRACT_ADDRESS, key)
-  balanceCache.set(key, { balance, expires: Date.now() + CACHE_TTL_MS })
-  return balance
+  if (hit && hit.expires > Date.now()) return hit.promise
+  const promise = balanceOf(env.RPC_URL, env.CONTRACT_ADDRESS, key)
+  balanceCache.set(key, { promise, expires: Date.now() + CACHE_TTL_MS })
+  promise.catch(() => balanceCache.delete(key)) // never cache a failure
+  return promise
 }
 
 function requireAddress(value: string): string {
@@ -61,6 +68,8 @@ const schema = createSchema<Env & ExecutionContext>({
       holders(where: holders_bool_exp!): [Holder!]!
       totalSupply: Int!
       contractAddress: String!
+      "Deployed build version — use to confirm a deploy actually shipped."
+      version: String!
     }
   `,
   resolvers: {
@@ -96,6 +105,7 @@ const schema = createSchema<Env & ExecutionContext>({
       },
       totalSupply: (_parent, _args, ctx) => totalSupply(ctx.RPC_URL, ctx.CONTRACT_ADDRESS),
       contractAddress: (_parent, _args, ctx) => ctx.CONTRACT_ADDRESS,
+      version: () => VERSION,
     },
     Holder: {
       tokenIds: (parent: HolderParent, _args, ctx) =>

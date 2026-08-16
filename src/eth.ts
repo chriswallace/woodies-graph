@@ -83,7 +83,9 @@ export async function tokenIdsOf(
   contract: string,
   owner: string,
   balance: number,
-  cap = 100
+  // Workers free plan allows 50 subrequests per request; leave headroom for
+  // the balance call and RPC fallback retries.
+  cap = 40
 ): Promise<string[] | null> {
   const count = Math.min(balance, cap)
   try {
