@@ -1,5 +1,7 @@
 // Minimal ERC-721 read helpers over raw JSON-RPC — no web3 library needed.
 
+import { GraphQLError } from 'graphql'
+
 // keccak-256 4-byte selectors for the functions we call
 const SELECTORS = {
   balanceOf: '0x70a08231', // balanceOf(address)
@@ -16,7 +18,7 @@ function padUint(value: bigint | string): string {
   return hex.padStart(64, '0')
 }
 
-async function ethCall(rpcUrl: string, to: string, data: string): Promise<string> {
+async function singleRpcCall(rpcUrl: string, to: string, data: string): Promise<string> {
   const res = await fetch(rpcUrl, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -26,18 +28,41 @@ async function ethCall(rpcUrl: string, to: string, data: string): Promise<string
       method: 'eth_call',
       params: [{ to, data }, 'latest'],
     }),
+    signal: AbortSignal.timeout(10_000),
   })
   if (!res.ok) {
-    throw new Error(`RPC HTTP ${res.status}`)
+    throw new Error(`RPC HTTP ${res.status} from ${new URL(rpcUrl).hostname}`)
   }
   const body = (await res.json()) as { result?: string; error?: { message?: string } }
   if (body.error) {
-    throw new Error(`RPC error: ${body.error.message ?? 'unknown'}`)
+    throw new Error(`RPC error from ${new URL(rpcUrl).hostname}: ${body.error.message ?? 'unknown'}`)
   }
   if (typeof body.result !== 'string') {
-    throw new Error('RPC returned no result')
+    throw new Error(`RPC returned no result from ${new URL(rpcUrl).hostname}`)
   }
   return body.result
+}
+
+// RPC_URL may be a comma-separated list; endpoints are tried in order until one
+// answers. Thrown as GraphQLError so graphql-yoga doesn't mask the message.
+async function ethCall(rpcUrls: string, to: string, data: string): Promise<string> {
+  const urls = rpcUrls
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean)
+  let lastError: unknown
+  for (const url of urls) {
+    try {
+      return await singleRpcCall(url, to, data)
+    } catch (err) {
+      lastError = err
+    }
+  }
+  throw new GraphQLError(
+    `All ${urls.length} RPC endpoint(s) failed. Last error: ${
+      lastError instanceof Error ? lastError.message : String(lastError)
+    }`
+  )
 }
 
 export async function balanceOf(rpcUrl: string, contract: string, owner: string): Promise<number> {

@@ -36,7 +36,7 @@ npm run smoke -- https://dcl.woodiesofficial.com/v1/graphql 0xSomeHolderWallet
 
 ### Optional: dedicated RPC
 
-The Worker defaults to Cloudflare's public Ethereum RPC (`https://cloudflare-eth.com`), which is fine for scene-gating traffic. If you want a dedicated provider, grab a free [Alchemy](https://www.alchemy.com/) or [Infura](https://www.infura.io/) mainnet URL and set it as a secret (secrets override the `wrangler.jsonc` var):
+The Worker defaults to a list of keyless public Ethereum RPCs (see `RPC_URL` in `wrangler.jsonc`), tried in order until one answers — fine for scene-gating traffic. If you want a dedicated provider, grab a free [Alchemy](https://www.alchemy.com/) or [Infura](https://www.infura.io/) mainnet URL and set it as a secret (secrets override the `wrangler.jsonc` var; comma-separate multiple URLs for fallback):
 
 ```bash
 npx wrangler secret put RPC_URL

@@ -13,9 +13,11 @@
   "vars": {
     // Woodies Generative Characters (ERC-721, Ethereum mainnet)
     "CONTRACT_ADDRESS": "0x134460d32fc66a6d84487c20dcd9fdcf92316017",
-    // Any Ethereum mainnet JSON-RPC endpoint. The default public endpoint is
-    // fine for light traffic; for reliability set this to a free Alchemy or
-    // Infura URL:  npx wrangler secret put RPC_URL
-    "RPC_URL": "https://cloudflare-eth.com"
+    // Ethereum mainnet JSON-RPC endpoint(s), comma-separated — tried in order
+    // until one answers. Keyless public endpoints; don't use cloudflare-eth.com
+    // (deprecated, and Workers can't reliably fetch Cloudflare-owned hosts).
+    // For a dedicated provider, set a free Alchemy/Infura URL as a secret
+    // (overrides this var):  npx wrangler secret put RPC_URL
+    "RPC_URL": "https://ethereum-rpc.publicnode.com,https://eth.drpc.org,https://eth.llamarpc.com"
   }
 }
